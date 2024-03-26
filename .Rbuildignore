@@ -1,2 +1,6 @@
 ^MDTToolset\.Rproj$
 ^\.Rproj\.user$
+^LICENSE\.md$
+^docs$
+^_pkgdown\.yml$
+^pkgdown$
