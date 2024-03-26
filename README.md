@@ -1,7 +1,7 @@
 
-\*\* This R package is currently under development \*\*
-
 # MDTToolset
+
+## THIS R PACKAGE IS CURRENTLY UNDER DEVELOPMENT
 
 The [R](https://www.r-project.org) package **MDTToolset** is designed to
 calculate the **M**ost **D**ominant **T**ranscript and their switches in
@@ -50,8 +50,8 @@ library(MDTToolset)
 
 ## Documentation
 
-The HTML documentation of the latest version released to CRAN is
-available at and [GitHub](https://github.com/KarakulakTulay/MDTToolset).
+The HTML documentation of the latest version is available at
+[GitHub](https://github.com/KarakulakTulay/MDTToolset).
 
 ## Credits
 
