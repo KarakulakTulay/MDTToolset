@@ -1,16 +1,22 @@
 
+\*\* This R package is currently under development \*\*
+
 # MDTToolset
 
 The [R](https://www.r-project.org) package **MDTToolset** is designed to
-calculate the **M**ost **D**ominant *T*ranscript and their switches in
-the RNA-Seq datasets. It can calculate;
+calculate the **M**ost **D**ominant **T**ranscript and their switches in
+the RNA-Seq datasets. It can;
 
-- Remove redundant transcripts that has the same protein sequences, and
-  merges their transcript counts.
-- Most dominant transcripts in RNA-Seq data with flexible cutoffs (e.g
-  user-defined transcript expression cutoff and enrichment cutoff)
-- MDTs found in user-defined percentage of samples
-- MDT Switching events with flexible cutoffs (e.g. user-defined cutoffs)
+- remove redundant transcripts that has the same protein sequences, and
+  sum up their transcript counts.
+- calculate Most dominant transcripts in RNA-Seq data with flexible
+  cutoffs (e.g user-defined transcript expression cutoff and enrichment
+  cutoff)
+- calculate MDTs found in user-defined percentage of samples
+- calculate MDT Switching events with flexible cutoffs
+  (e.g. user-defined cutoffs)
+- integrate isoform interaction network with the MDT switches to
+  understand their functional impact on protein interaction network
 
 ## Installation
 
