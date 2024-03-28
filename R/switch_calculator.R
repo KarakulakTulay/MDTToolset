@@ -11,10 +11,11 @@
 #' @param ensp_only transcripts having ENSP ids
 #'
 #' @return datatable
-#' @importFrom dplyr group_by mutate select count n arrange filter distinct desc
+#' @importFrom dplyr group_by mutate select count n arrange filter distinct desc summarise pull
 #' @importFrom rlang .data
 #' @importFrom magrittr %>%
 #' @importFrom stats median
+#' @import data.table
 #' @export
 
 switch_calculator <- function(cancer_ori, gtex_ori, exp_values_pcawg, exp_values_gtex, ensp_sequences, cutoff, cutoff_rate, cutoff_other_MDTs, ensp_only) {
@@ -42,9 +43,25 @@ switch_calculator <- function(cancer_ori, gtex_ori, exp_values_pcawg, exp_values
                       relative_cancer_exp = numeric(),
                       relative_gtex_exp = numeric(),
                       MDT_GTEx = character())
-  sample_number_gtex <- length(unique(gtex$SampleID)) # number of GTEx sample
 
-  potential_cMDT_lists <- unique(cancer$ENST1)
+  sample_number_gtex <- length(unique(gtex$SampleID)) # number of GTEx sample
+  # Calculate the frequency of each ENST1 in gtex
+  gtex_frequency <- gtex %>%
+    dplyr::group_by(ENST1) %>%
+    dplyr::summarise(Count = n())
+
+  # Calculate the threshold number of samples
+  threshold <- sample_number_gtex * (cutoff / 100)
+  # Filter the frequencies based on the threshold
+  filtered_gtex_ENST1 <- gtex_frequency %>%
+    dplyr::filter(Count <= threshold) %>%
+    dplyr::pull(ENST1)
+
+ # Select ENST1s from cancer that are in the filtered list or not present in gtex at all
+  potential_cMDT_lists <- cancer %>%
+    dplyr::filter(ENST1 %in% filtered_gtex_ENST1 | !ENST1 %in% gtex$ENST1) %>%
+    dplyr::pull(ENST1) %>%
+    unique()
 
   for (i in potential_cMDT_lists) {
     statistical_test2 <- NULL
@@ -91,30 +108,28 @@ switch_calculator <- function(cancer_ori, gtex_ori, exp_values_pcawg, exp_values
         number_of_MDT_in_gtex <- length(gtex[gtex$ENST1 == MDT_in_sample, 1])
         percent_of_MDT_in_gtex <- number_of_MDT_in_gtex / sample_number_gtex * 100
 
-        if (percent_of_MDT_in_gtex <= cutoff) {
-          cancer_relative_exp_of_MDT <- (exp_values_pcawg %>% dplyr::filter(.data$ENST == MDT_in_sample))[, sample_ids] / colSums(as.data.frame(exp_values_pcawg[exp_values_pcawg$ENSG == gene_id_sample, sample_ids]))
+        cancer_relative_exp_of_MDT <- (exp_values_pcawg %>% dplyr::filter(.data$ENST == MDT_in_sample))[, sample_ids] / colSums(as.data.frame(exp_values_pcawg[exp_values_pcawg$ENSG == gene_id_sample, sample_ids]))
 
-          gtex_relative_exp_of_MDT <- as.numeric((exp_values_gtex %>% dplyr::filter(.data$ENST == MDT_in_sample))[, 3:ncol(exp_values_gtex)] / colSums(exp_values_gtex[exp_values_gtex$ENSG == gene_id_sample, 3:ncol(exp_values_gtex)]))
+        gtex_relative_exp_of_MDT <- as.numeric((exp_values_gtex %>% dplyr::filter(.data$ENST == MDT_in_sample))[, 3:ncol(exp_values_gtex)] / colSums(exp_values_gtex[exp_values_gtex$ENSG == gene_id_sample, 3:ncol(exp_values_gtex)]))
 
-          median_gtex_relative_exp_of_MDT <- median(as.numeric(as.vector(gtex_relative_exp_of_MDT)), na.rm = TRUE)
+        median_gtex_relative_exp_of_MDT <- median(as.numeric(as.vector(gtex_relative_exp_of_MDT)), na.rm = TRUE)
 
-          statistical_test <- sapply(1:nrow(t(cancer_relative_exp_of_MDT)), function(i) BSDA::SIGN.test(gtex_relative_exp_of_MDT, alternative = "less", md = i))["p.value", ]
+        statistical_test <- sapply(1:nrow(t(cancer_relative_exp_of_MDT)), function(i) BSDA::SIGN.test(gtex_relative_exp_of_MDT, alternative = "less", md = i))["p.value", ]
 
-          data_of_MDT_w_statistics <- cbind(data_of_MDT, unlist(statistical_test), t(cancer_relative_exp_of_MDT), replicate(nrow(data_of_MDT), median_gtex_relative_exp_of_MDT))
+        data_of_MDT_w_statistics <- cbind(data_of_MDT, unlist(statistical_test), t(cancer_relative_exp_of_MDT), replicate(nrow(data_of_MDT), median_gtex_relative_exp_of_MDT))
 
-          colnames(data_of_MDT_w_statistics) <- c("SampleID", "ENSG", "ENST1_cancer", "ENST2_cancer", "TPM1_cancer", "TPM2_cancer", "enrichment", "p_value", "relative_cancer_exp", "relative_gtex_exp")
+        colnames(data_of_MDT_w_statistics) <- c("SampleID", "ENSG", "ENST1_cancer", "ENST2_cancer", "TPM1_cancer", "TPM2_cancer", "enrichment", "p_value", "relative_cancer_exp", "relative_gtex_exp")
 
-          data_of_MDT_w_statistics_filtered <- data_of_MDT_w_statistics %>%
+        data_of_MDT_w_statistics_filtered <- data_of_MDT_w_statistics %>%
             dplyr::filter(.data$p_value <= 0.05) %>%
             dplyr::filter(.data$relative_cancer_exp > median_gtex_relative_exp_of_MDT)
 
-          if (isTRUE(!is.na(data_of_MDT_w_statistics_filtered$SampleID[1]))) {
+        if (isTRUE(!is.na(data_of_MDT_w_statistics_filtered$SampleID[1]))) {
             l <- cbind(data_of_MDT_w_statistics_filtered, replicate(nrow(data_of_MDT_w_statistics_filtered), paste(unique_gtex_ensts_after_remove_redundant, collapse = ",")))
 
-            colnames(l) <- c("SampleID", "ENSG", "dMDT", "ENST2_cancer", "TPM1_cancer", "TPM2_cancer", "enrichment", "p_value", "relative_cancer_exp", "relative_gtex_exp", "MDT_GTEx")
-            dMDT <- data.table::rbindlist(list(dMDT, l))
+          colnames(l) <- c("SampleID", "ENSG", "dMDT", "ENST2_cancer", "TPM1_cancer", "TPM2_cancer", "enrichment", "p_value", "relative_cancer_exp", "relative_gtex_exp", "MDT_GTEx")
+          dMDT <- data.table::rbindlist(list(dMDT, l))
           }
-        }
       }
     }
   }
@@ -122,6 +137,7 @@ switch_calculator <- function(cancer_ori, gtex_ori, exp_values_pcawg, exp_values
   if(nrow(dMDT) != 0){
 
     colnames(dMDT) <- c("SampleID", "ENSG", "dMDT", "ENST2_cancer", "TPM1_cancer", "TPM2_cancer", "enrichment", "p_value", "relative_cancer_exp", "relative_gtex_exp", "MDT_GTEx")
+    dMDT <- as.data.frame(dMDT)
     dMDT2 <- dMDT[order(dMDT$p_value), ]
     dMDT3 <- cbind(dMDT2, stats::p.adjust(dMDT2$p_value, method = "BH"))
     colnames(dMDT3) <- c("SampleID", "ENSG", "dMDT", "ENST2_cancer", "TPM1_cancer", "TPM2_cancer", "enrichment", "p_value", "relative_cancer_exp", "relative_gtex_exp", "MDT_GTEx" , "adj_p")
