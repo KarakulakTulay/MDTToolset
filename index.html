@@ -22,11 +22,11 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
     
 
-    <nav class="navbar fixed-top navbar-light navbar-expand-lg bg-light"><div class="container">
+    <nav class="navbar fixed-top navbar-dark navbar-expand-lg bg-primary"><div class="container">
     
     <a class="navbar-brand me-2" href="index.html">MDTToolset</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,7 +41,8 @@
 <li class="nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-articles">
-    <a class="dropdown-item" href="articles/MDTToolset-vignette.html">MDTToolset-vignette</a>
+    <a class="dropdown-item" href="articles/MDTToolset-vignette.html">Introduction to Most Dominant Transcripts</a>
+    <a class="dropdown-item" href="articles/MDTToolset_switching-vignette.html">MDT Switching Event and Its Functional Impact</a>
   </div>
 </li>
       </ul>
@@ -64,49 +65,56 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="mdttoolset">MDTToolset<a class="anchor" aria-label="anchor" href="#mdttoolset"></a>
-</h1></div>
+<div class="page-header"><h1 id="section"></h1></div>
 <div class="section level2">
-<h2 id="this-r-package-is-currently-under-development">THIS R PACKAGE IS CURRENTLY UNDER DEVELOPMENT<a class="anchor" aria-label="anchor" href="#this-r-package-is-currently-under-development"></a>
+<h2 id="mdttoolset">MDTToolset<a class="anchor" aria-label="anchor" href="#mdttoolset"></a>
 </h2>
-<p>The <a href="https://www.r-project.org" class="external-link">R</a> package <strong>MDTToolset</strong> is designed to calculate the <strong>M</strong>ost <strong>D</strong>ominant <strong>T</strong>ranscript and their switches in the RNA-Seq datasets. It can;</p>
+<div class="section level3">
+<h3 id="this-r-package-is-currently-under-development">THIS R PACKAGE IS CURRENTLY UNDER DEVELOPMENT<a class="anchor" aria-label="anchor" href="#this-r-package-is-currently-under-development"></a>
+</h3>
+</div>
+<div class="section level3">
+<h3 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
+</h3>
+<p>The <a href="https://www.r-project.org" class="external-link">R</a> package <strong>MDTToolset</strong> is designed to calculate the <strong>M</strong>ost <strong>D</strong>ominant <strong>T</strong>ranscript and their switches in the RNA-Seq datasets. It enables users to:</p>
 <ul>
-<li>remove redundant transcripts that has the same protein sequences, and sum up their transcript counts.</li>
-<li>calculate Most dominant transcripts in RNA-Seq data with flexible cutoffs (e.g user-defined transcript expression cutoff and enrichment cutoff)</li>
-<li>calculate MDTs found in user-defined percentage of samples</li>
-<li>calculate MDT Switching events with flexible cutoffs (e.g. user-defined cutoffs)</li>
-<li>integrate isoform interaction network with the MDT switches to understand their functional impact on protein interaction network</li>
+<li>Remove redundant transcripts with identical protein sequences and aggregate their transcript counts.</li>
+<li>Calculate the most dominant transcripts in RNA-Seq data using flexible cutoffs, such as user-defined transcript expression and enrichment cutoffs.</li>
+<li>Identify MDTs present in a user-defined percentage of samples.</li>
+<li>Calculate MDT Switching events with flexible user-defined cutoffs.</li>
+<li>Integrate the isoform interaction network with the MDT switches to understand their functional impact on the protein interaction network.</li>
+<li>Visualize the expression of MDTs and disease-specific MDTs (dMDTs).</li>
+<li>Visualize the network of dMDTs.</li>
 </ul>
 </div>
-<div class="section level2">
-<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
-</h2>
+<div class="section level3">
+<h3 id="background">Background<a class="anchor" aria-label="anchor" href="#background"></a>
+</h3>
+<p>Alternative splicing plays an essential role in development, tissue specificity and essential cell functions. One gene can encode for many transcripts, one of those transcripts might be expressed at a significantly higher level than the other transcripts. These transcripts are defined as most dominant transcripts (MDTs). In cancer, those canonical MDTs might be switched to other transcripts which we call MDT switching event. The <em>MDTToolset</em> aims to find the MDTs in RNA-seq data and evaluated the MDT switching event in a flexible user-defined way. The user can define cutoffs for the transcript expression, and MDT enrichment.</p>
+</div>
+<div class="section level3">
+<h3 id="how-to-install">How to Install<a class="anchor" aria-label="anchor" href="#how-to-install"></a>
+</h3>
 <p>You can install the development version of MDTToolset from <a href="https://github.com/KarakulakTulay/MDTToolset" class="external-link">GitHub</a> with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"KarakulakTulay/MDTToolset"</span><span class="op">)</span></span></code></pre></div>
 </div>
-<div class="section level2">
-<h2 id="background">Background<a class="anchor" aria-label="anchor" href="#background"></a>
-</h2>
-<p>Alternative splicing plays an essential role in development, tissue specificity and essential cell functions. One gene can encode for many transcripts, one of those transcripts might be expressed at a significantly higher level than the other transcripts. These transcripts are defined as most dominant transcripts (MDTs). In cancer, those canonical MDTs might be switched to other transcripts which we call MDT switching event. This R package aims to find the MDTs in RNA-seq data and evaluated the MDT switching event in a flexible user-defined way. The user can define cutoffs for the transcript expression, and MDT enrichment.</p>
+<div class="section level3">
+<h3 id="vignettes">Vignettes<a class="anchor" aria-label="anchor" href="#vignettes"></a>
+</h3>
+<p>Please find a comprehensive workflow to MDTToolset in the <a href="https://karakulaktulay.github.io/MDTToolset/articles/MDTToolset-vignette.html">vignette</a>.</p>
 </div>
-<div class="section level2">
-<h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
-</h2>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/KarakulakTulay/MDTToolset" class="external-link">MDTToolset</a></span><span class="op">)</span></span>
-<span><span class="co">## basic example code</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
-</h2>
+<div class="section level3">
+<h3 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
+</h3>
 <p>The HTML documentation of the latest version is available at <a href="https://github.com/KarakulakTulay/MDTToolset" class="external-link">GitHub</a>.</p>
 </div>
-<div class="section level2">
-<h2 id="credits">Credits<a class="anchor" aria-label="anchor" href="#credits"></a>
-</h2>
+<div class="section level3">
+<h3 id="credits">Credits<a class="anchor" aria-label="anchor" href="#credits"></a>
+</h3>
 <p>The idea behind <code>MDTToolset</code> was developed by Abdullah Kahraman, and the original perl codes for the calculation of MDTs and their switches can be found <a href="https://github.com/abxka/CanIsoNet" class="external-link">here</a>.</p>
+</div>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

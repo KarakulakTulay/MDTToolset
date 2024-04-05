@@ -3,5 +3,9 @@ pkgdown: 2.0.7
 pkgdown_sha: ~
 articles:
   MDTToolset-vignette: MDTToolset-vignette.html
-last_built: 2024-03-28T22:34Z
+  MDTToolset_switching-vignette: MDTToolset_switching-vignette.html
+last_built: 2024-04-05T12:49Z
+urls:
+  reference: https://karakulaktulay.github.io/MDTToolset/reference
+  article: https://karakulaktulay.github.io/MDTToolset/articles
 
