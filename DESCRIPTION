@@ -15,7 +15,11 @@ Imports:
     magrittr,
     rlang,
     stats,
-    tidyr
+    tidyr,
+    ggplot2,
+    igraph,
+    RColorBrewer,
+    Biostrings
 Depends: 
     R (>= 2.10)
 LazyData: true
