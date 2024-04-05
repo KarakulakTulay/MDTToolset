@@ -1,0 +1,121 @@
+---
+title: "MDT Switching Event and Its Functional Impact"
+subtitle: "*Detection of Most Dominant Transcript Switches and Their Functional Impact*"
+author: "Tülay Karakulak"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{MDT Switching Event and Its Functional Impact}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Load MDTToolset
+```{r setup, message=FALSE, warning=FALSE}
+library(MDTToolset)
+```
+
+## Prepare Input File
+The following files are given together with the MDTToolset. If you would like to see how they are prepared, please see tutorial: Introduction to Most Dominant Transcripts.
+```{r readRDSfiles}
+cond1_mdts <- MDTToolset::cond1_mdts
+cond2_mdts <- MDTToolset::cond2_mdts
+cond1_ENST_ENSG_nonredundant <- MDTToolset::cond1_ENST_ENSG_nonredundant
+cond2_ENST_ENSG_nonredundant <- MDTToolset::cond2_ENST_ENSG_nonredundant
+```
+
+```{r loadENSG_ENST_data}
+# read MANE Select
+ensg_enst_ensp_mane_v104 <- MDTToolset::ensg_enst_ensp_mane_v104
+# prepare sequences and Mane select transcripts dataframe
+ensg_enst_seq <- prepare_Seq(MDTToolset::Homo_sapiens.GRCh38.cdna.all, ensg_enst_ensp_mane_v104)
+
+## Select transcripts having MANE ids
+enst_mane_iso <- ensg_enst_ensp_mane_v104[!(is.na(ensg_enst_ensp_mane_v104$RefSeq.match.transcript..MANE.Select.) | ensg_enst_ensp_mane_v104$RefSeq.match.transcript..MANE.Select. == ''),c(1,2,3,4)]
+
+# Select the only ENSTs having ENSP Protein IDs.
+ensp_only <- ensg_enst_ensp_mane_v104[!ensg_enst_ensp_mane_v104$Protein.stable.ID == "",]
+```
+
+## Calculate MDT Switching Events in the Data
+
+The `switch_calculator()` function identifies MDT switching events in each sample by comparing it to a "Normal" cohort or another specified cohort, thereby defining dMDT (disease-specific MDTs). It considers the following criteria:
+
+- cutoff: The percentage of samples in the comparison group (cond2 in our case) that may have the same MDT as the Normal cohort. A cutoff of 0 is very stringent and ensures that the dMDT is not observed in any of the samples from cond2.
+- cutoff_rate: The enrichment rate between Transcript 1 and Transcript 2 in the cond1_mdts and cond2_mdts datasets.
+- cutoff_other_MDTs: The percentage of cond2 samples having another MDT for the same gene.
+
+```{r MDTSwitchingEvent}
+# Calculate switches in condition 1 compared to condition 2
+Cond1_Cond2_Switches <- switch_calculator(cancer_ori = cond1_mdts, gtex_ori = cond2_mdts, exp_values_pcawg = cond1_ENST_ENSG_nonredundant, exp_values_gtex = cond2_ENST_ENSG_nonredundant, ensp_sequences = ensg_enst_seq, ensp_only = ensp_only, cutoff = 0, cutoff_rate = 2, cutoff_other_MDTs = 50)
+
+# visalize the results. Note that you should have knitr R package installed.
+knitr::kable(head(Cond1_Cond2_Switches,5), caption = 'MDT Switching Events')
+```
+
+
+## Calculate Functional Impact of Transcript Switches by Integrating the Transcript Interaction Network
+### Isoform Interaction Network
+Different transcripts of a gene can have varying exons, leading to changes in protein domains. These changes may disrupt interactions with protein interaction partners. To understand the functional impact of these switching events, we incorporate the transcript interaction network into the switching results.
+**MDTToolset** provides Isoform Network, IsoNetwork_v12, which is based on STRING v12. This network has the following columns. 
+*ENSG*: Ensembl gene ID
+*ENSP*: Ensembl protein ID
+*ENST*: Ensembl transcript ID
+*STRINGensp*: STRING protein ID, considered canonical
+*STRINGintN*: Number of proteins STRINGensp interacts with in the STRING database
+*ExistIntN*: Number of interactions ENST is involved in
+*MissIntN*: Number of interactions ENST has lost
+*RelMissIntN*: Percentage of interaction loss
+*ExistInts*: Existing interactions of ENST
+*MissInts*: Lost interactions of ENST
+
+```{r read_isoform_isoform_int_network}
+IsoNetwork_v12 <- MDTToolset::IsoNetwork_v12
+knitr::kable(head(IsoNetwork_v12,5), caption = 'Isoform Interaction Network')
+
+# read where the Pfam
+ENSG_ENST_ENSP_Pfam <- MDTToolset::ENSG_ENST_ENSP_Pfam
+```
+
+### Calculate the Functional Impact
+To understand if the interaction partners of ENSTs (lost or kept) are expressed in the sample, we implemented a function `buildIsoNet()` which takes four inputs:
+*dMDT_network_info*: Merged database: switching results and Isoform Network 
+*ensembl_data*: ENSG_ENST_ENSP_Pfam 
+*kallisto_counts*: cond1_ENST_ENSG_nonredundant
+*iso_network*: IsoNetwork_v12
+
+```{r buildIsoNet}
+# we first merge the switching results with Isoform Network
+dMDTs_IsoNetwork <- merge(Cond1_Cond2_Switches, IsoNetwork_v12, by.x='dMDT', by.y='ENST')
+dMDTs_IsoNetwork_int <- dMDTs_IsoNetwork[dMDTs_IsoNetwork$MissInts != '-' | dMDTs_IsoNetwork$ExistInts != '-',]
+
+Switching_Events_Network <- buildIsoNet(dMDT_network_info = dMDTs_IsoNetwork_int, ensembl_data = ENSG_ENST_ENSP_Pfam, kallisto_counts = cond1_ENST_ENSG_nonredundant, iso_network = IsoNetwork_v12)
+knitr::kable(head(Switching_Events_Network,2), caption = 'Interaction Lost of dMDTs')
+```
+
+
+## Visualize Network of Interaction Lost
+`visualize_network()` function will take two inputs: ENSP id, and Isoform Network, IsoNetwork_v12. And it gives a graph showing the network of the protein (of transript of interest) using igraph R package. 
+
+### Example 1: All Interactions are Lost
+```{r drawNetwork}
+visualize_network('ENSP00000418331', IsoNetwork_v12)
+```
+### Example 2: Some interactions are lost while some are kept
+```{r drawNetwork2}
+visualize_network('ENSP00000432956', IsoNetwork_v12)
+visualize_network('ENSP00000376066', IsoNetwork_v12)
+```
+## Check Expression Level of dMDT:MDT in the sample
+```{r plotExpression}
+plotExpression('ENST00000346617', 'ENST00000216923', 'tpm_kallisto_macular_retina-1', cond1_ENST_ENSG_nonredundant, cond2_ENST_ENSG_nonredundant)
+```
+
+
