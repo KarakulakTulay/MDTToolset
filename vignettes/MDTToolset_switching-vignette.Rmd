@@ -77,7 +77,7 @@ Different transcripts of a gene can have varying exons, leading to changes in pr
 *MissInts*: Lost interactions of ENST
 
 ```{r read_isoform_isoform_int_network}
-IsoNetwork_v12 <- MDTToolset::IsoNetwork_v12
+IsoNetwork_v12 <- MDTToolset::IsoNetwork_v12_subsetData
 knitr::kable(head(IsoNetwork_v12,5), caption = 'Isoform Interaction Network')
 
 # read where the Pfam
