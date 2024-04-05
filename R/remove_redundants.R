@@ -20,7 +20,7 @@ remove_redundants <- function(data_matrix, enst_ensp_sequences, mane_select) {
   colnames(data_matrix) <- change_dot(colnames(data_matrix))
   colnames(data_matrix) <- gsub("^X", "", colnames(data_matrix))
 
-  mane_select_essentials <- mane_select[, c(1, 3, 5)]
+  mane_select_essentials <- mane_select[, c(1, 2, 4)]
   colnames(mane_select_essentials) <- c("ENSG", "ENST", "Mane")
 
   enst_ensp_sequences_mane_select <- merge(enst_ensp_sequences, mane_select_essentials, all.x = TRUE, sort = FALSE)
