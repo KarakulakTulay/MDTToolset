@@ -4,7 +4,12 @@
 \alias{remove_redundants}
 \title{Remove Redundant Transcripts}
 \usage{
-remove_redundants(data_matrix, enst_ensp_sequences, mane_select)
+remove_redundants(
+  data_matrix,
+  enst_ensp_sequences,
+  mane_select = NULL,
+  peptide_lengths = NULL
+)
 }
 \arguments{
 \item{data_matrix}{Bulk RNA Seq expression matrix from samples, columns are samples and first row is gene ids, second row is transcript ids and the rest of the rows are samples}
