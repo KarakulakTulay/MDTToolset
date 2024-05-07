@@ -250,8 +250,9 @@ the next step. Ensure that the first two column names are ‘ENST’ and
 </table>
 </div>
 <div class="section level3">
-<h3 id="removing-redundant-transcripts">Removing Redundant Transcripts<a class="anchor" aria-label="anchor" href="#removing-redundant-transcripts"></a>
+<h3 id="prepare-files-to-remove-the-redundant-transcripts">Prepare Files to Remove the Redundant Transcripts<a class="anchor" aria-label="anchor" href="#prepare-files-to-remove-the-redundant-transcripts"></a>
 </h3>
+<p>This step is optional but highly recommended.</p>
 <p>A challenge in transcript quantification is the presence of redundant
 transcripts, which are transcripts with identical sequences that yield
 the same TPM values. This redundancy can obscure the identification of
@@ -441,6 +442,57 @@ the second column includes the ENSG ids.</p>
 </tr>
 </tbody>
 </table>
+<p>As transcripts with the same sequences might have different peptide
+lengths, we aim to select the ones with the longest sequence when there
+is a redundancy. This information cannot be accessed directly via
+Ensembl Biomart, this we need to download the transcripts’ peptide
+sequences and then calculate the length of the peptides. We provide
+Ensembl version 104 as an example. In case you want to prepare a
+different version, download ENSG, ENST, peptide sequences from Biomart
+and use the following function from MDTToolset:</p>
+<p>df_biomart_seq_length &lt;-
+MDTToolset::MDTToolset::prepare_seq_length(‘mart_export.txt’) The file
+‘mart_export.txt’ is in the fasta file format:
+&gt;ENSG0000000XXXX|ENST0000000KKK
+MQRSPLEKASVVSKLFFSWTRPILRKGYRQRLELSDIYQIPSVDSADNLSEKLEREWDRE
+LASKKNPKLINALRRCFFWRFMFYGIFLYLGEVTKAVQPLLLGRIIASYDPDNKEERSIA IYLG*
+&gt;ENSG0000000YYYY|ENST0000000ZZZ
+MTAEEMKATESGAQSAPLPMEGVDISPKQDEGVLKVIKREGTGTEMPMIGDRVFVHYTGW
+LLDGTKFDSSLD</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Example dataframe for df_biomart_seq_length </span></span>
+<span><span class="va">df_biomart_seq_length</span> <span class="op">&lt;-</span> <span class="fu">MDTToolset</span><span class="fu">::</span><span class="va">df_biomart_seq_selection</span></span>
+<span></span>
+<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">df_biomart_seq_length</span>,<span class="fl">2</span><span class="op">)</span>, caption <span class="op">=</span> <span class="st">"Transcripts' Peptide Seq Length"</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<caption>Transcripts’ Peptide Seq Length</caption>
+<colgroup>
+<col width="48%">
+<col width="21%">
+<col width="21%">
+<col width="9%">
+</colgroup>
+<thead><tr class="header">
+<th align="left"></th>
+<th align="left">ENSG</th>
+<th align="left">ENST</th>
+<th align="right">Length</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">ENSG00000001626|ENST00000003084</td>
+<td align="left">ENSG00000001626</td>
+<td align="left">ENST00000003084</td>
+<td align="right">1481</td>
+</tr>
+<tr class="even">
+<td align="left">ENSG00000004478|ENST00000001008</td>
+<td align="left">ENSG00000004478</td>
+<td align="left">ENST00000001008</td>
+<td align="right">460</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section level3">
 <h3 id="remove-redundant-transcripts">Remove Redundant Transcripts<a class="anchor" aria-label="anchor" href="#remove-redundant-transcripts"></a>
@@ -451,11 +503,15 @@ and Mane select file prepared in the previous step. If there is more
 than one transcript of a gene with the same sequences, one of them is
 removed, its TPM value is added to the selected transcript.
 Additionally, if there is a transcript assigned as <code>MANE</code>,
-this transcript is prioritirized over the other ones. The output will be
-the same as previous TPM file without redundant ones.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cond1_ENST_ENSG_nonredundant</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/remove_redundants.html">remove_redundants</a></span><span class="op">(</span><span class="va">cond1_ENST_ENSG</span>, <span class="va">ensg_enst_seq</span>, <span class="va">enst_mane_iso</span><span class="op">)</span></span>
-<span><span class="va">cond2_ENST_ENSG_nonredundant</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/remove_redundants.html">remove_redundants</a></span><span class="op">(</span><span class="va">cond2_ENST_ENSG</span>, <span class="va">ensg_enst_seq</span>, <span class="va">enst_mane_iso</span><span class="op">)</span></span></code></pre></div>
+this transcript is prioritized over the other ones. If there is no MANE
+selects for the redundant transcripts, the transcripts with the longest
+peptide sequence is chosen. The output will be the same as previous TPM
+file without redundant ones.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">## Example Usage</span></span>
+<span><span class="co">#cond1_ENST_ENSG_nonredundant &lt;- remove_redundants(data_matrix = cond1_ENST_ENSG, enst_ensp_sequences = ensg_enst_seq, mane_select =  NULL, peptide_lengths = NULL)</span></span>
+<span><span class="va">cond1_ENST_ENSG_nonredundant</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/remove_redundants.html">remove_redundants</a></span><span class="op">(</span><span class="va">cond1_ENST_ENSG</span>, <span class="va">ensg_enst_seq</span>, <span class="va">enst_mane_iso</span>, <span class="va">df_biomart_seq_length</span><span class="op">)</span></span>
+<span><span class="va">cond2_ENST_ENSG_nonredundant</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/remove_redundants.html">remove_redundants</a></span><span class="op">(</span><span class="va">cond2_ENST_ENSG</span>, <span class="va">ensg_enst_seq</span>, <span class="va">enst_mane_iso</span>, <span class="va">df_biomart_seq_length</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="find-mdts">Find MDTs<a class="anchor" aria-label="anchor" href="#find-mdts"></a>
@@ -466,7 +522,7 @@ two criteria: a user-defined cutoff and min_exp. The cutoff parameter
 specifies the enrichment rate between the expressions of the first and
 second-ranked transcripts. min_exp determines the minimum expression
 level that transcripts must meet to be considered as MDTs.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cond1_mdts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/find_mdts.html">find_mdts</a></span><span class="op">(</span><span class="va">cond1_ENST_ENSG_nonredundant</span>, cutoff <span class="op">=</span> <span class="fl">2</span>, min_exp <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span></span>
 <span><span class="va">cond2_mdts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/find_mdts.html">find_mdts</a></span><span class="op">(</span><span class="va">cond2_ENST_ENSG_nonredundant</span>, cutoff <span class="op">=</span> <span class="fl">2</span>, min_exp <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -476,14 +532,14 @@ level that transcripts must meet to be considered as MDTs.</p>
 <p>We provide a basic boxplot plot using ggplot to plot the number of
 MDTs in each condition and also bar graph to visualize number of MDTs in
 each sample. ### visualize the number of MDTs in each condition</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Distribution of number of MDTs in each sample</span></span>
 <span><span class="fu"><a href="../reference/MDT_boxplot.html">MDT_boxplot</a></span><span class="op">(</span><span class="va">cond1_mdts</span>, <span class="va">cond2_mdts</span>, title <span class="op">=</span> <span class="st">"Distribution of Number of MDTs"</span>, x_axis_label <span class="op">=</span> <span class="st">"Condition"</span>, y_axis_label <span class="op">=</span> <span class="st">"Number of MDT"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="MDTToolset-vignette_files/figure-html/plotMDTcounts-1.png" width="700"></p>
 <div class="section level4">
 <h4 id="visualize-the-number-of-mdts-in-each-sample">visualize the number of MDTs in each sample<a class="anchor" aria-label="anchor" href="#visualize-the-number-of-mdts-in-each-sample"></a>
 </h4>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Distribution of number of MDTs in each sample</span></span></code></pre></div>
 </div>
 </div>
