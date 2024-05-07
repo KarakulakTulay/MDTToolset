@@ -41,7 +41,9 @@ knitr::kable(head(cond2,2), caption = 'TPM Matrix')
 
 ```
 
-## Removing Redundant Transcripts
+## Prepare Files to Remove the Redundant Transcripts
+This step is optional but highly recommended.
+
 A challenge in transcript quantification is the presence of redundant transcripts, which are transcripts with identical sequences that yield the same TPM values. This redundancy can obscure the identification of Most Dominant Transcripts (MDTs) by preventing the detection of a singular, dominant transcript for a given gene. To address this issue, our initial step involves eliminating redundant transcripts from the dataset. This process includes assigning TPM values to a single representative transcript per redundant group, based on the comparison of their protein sequences.
 
 Priority is given to transcripts classified as MANE (Matched Annotation from NCBI and EMBL-EBI) in the Ensembl database, designating them as the primary transcript. In cases where no MANE transcript is identified, a transcript is randomly selected to represent the group. This step is particularly crucial when working with tools like Kallisto, which may assign identical TPM values to redundant transcripts. Following this, the calculation of MDTs proceeds using the reassigned TPM values.
@@ -70,12 +72,35 @@ knitr::kable(head(cond1_ENST_ENSG,2), caption = 'TPM Matrix')
 knitr::kable(head(cond2_ENST_ENSG,2), caption = 'TPM Matrix')
 ```
 
+As transcripts with the same sequences might have different peptide lengths, we aim to select the ones with the longest sequence when there is a redundancy. This information cannot be accessed directly via Ensembl Biomart, this we need to download the transcripts' peptide sequences and then calculate the length of the peptides. We provide Ensembl version 104 as an example. In case you want to prepare a different version, download ENSG, ENST, peptide sequences from Biomart and use the following function from MDTToolset:
+
+df_biomart_seq_length <- MDTToolset::MDTToolset::prepare_seq_length('mart_export.txt') 
+File format of mart_export.txt if fasta format:
+>ENSG0000000XXXX|ENST0000000KKK
+MQRSPLEKASVVSKLFFSWTRPILRKGYRQRLELSDIYQIPSVDSADNLSEKLEREWDRE
+LASKKNPKLINALRRCFFWRFMFYGIFLYLGEVTKAVQPLLLGRIIASYDPDNKEERSIA
+IYLG*
+>ENSG0000000YYYY|ENST0000000ZZZ
+MTAEEMKATESGAQSAPLPMEGVDISPKQDEGVLKVIKREGTGTEMPMIGDRVFVHYTGW
+LLDGTKFDSSLD
+
+
+```{r }
+# Example dataframe for df_biomart_seq_length 
+df_biomart_seq_length <- MDTToolset::df_biomart_seq_length
+
+knitr::kable(head(df_biomart_seq_length,2), caption = "Transcripts' Peptide Seq Length")
+```
+
+
 ## Remove Redundant Transcripts
-`remove_redundant()` function takes three inputs, transcript TPM file (having ENST and ENSG columns), ENST sequence file, and Mane select file prepared in the previous step. If there is more than one transcript of a gene with the same sequences, one of them is removed, its TPM value is added to the selected transcript. Additionally, if there is a transcript assigned as `MANE`, this transcript is prioritirized over the other ones. The output will be the same as previous TPM file without redundant ones.
+`remove_redundant()` function takes three inputs, transcript TPM file (having ENST and ENSG columns), ENST sequence file, and Mane select file prepared in the previous step. If there is more than one transcript of a gene with the same sequences, one of them is removed, its TPM value is added to the selected transcript. Additionally, if there is a transcript assigned as `MANE`, this transcript is prioritized over the other ones. If there is no MANE selects for the redundant transcripts, the transcripts with the longest peptide sequence is chosen. The output will be the same as previous TPM file without redundant ones.
 
 ```{r removeRedundant}
-cond1_ENST_ENSG_nonredundant <- remove_redundants(cond1_ENST_ENSG, ensg_enst_seq, enst_mane_iso)
-cond2_ENST_ENSG_nonredundant <- remove_redundants(cond2_ENST_ENSG, ensg_enst_seq, enst_mane_iso)
+## Example Usage
+#cond1_ENST_ENSG_nonredundant <- remove_redundants(data_matrix = cond1_ENST_ENSG, enst_ensp_sequences = ensg_enst_seq, mane_select =  NULL, peptide_lengths = NULL)
+cond1_ENST_ENSG_nonredundant <- remove_redundants(cond1_ENST_ENSG, ensg_enst_seq, enst_mane_iso, df_biomart_seq_length)
+cond2_ENST_ENSG_nonredundant <- remove_redundants(cond2_ENST_ENSG, ensg_enst_seq, enst_mane_iso, df_biomart_seq_length)
 ```
 
 
