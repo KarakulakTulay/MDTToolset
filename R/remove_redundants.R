@@ -10,28 +10,34 @@
 #' @importFrom magrittr %>%
 #' @export
 
-remove_redundants <- function(data_matrix, enst_ensp_sequences, mane_select) {
-  # remove redundant transcripts and multiply other transcript TPMs with the number of redundant transcripts
-  change_dot <- function(x) {
-    x <- as.character(x)
-    x <- gsub(pattern = ".", replacement = "-", x = x, fixed = TRUE)
-    return(x)
+remove_redundants <- function(data_matrix, enst_ensp_sequences, mane_select = NULL, peptide_lengths = NULL) {
+  # Ensure the 'Mane' column exists conditionally based on 'mane_select'
+  if (!is.null(mane_select)) {
+    mane_select_essentials <- mane_select[, c(1, 2, 4)]
+    colnames(mane_select_essentials) <- c("ENSG", "ENST", "Mane")
+    enst_ensp_sequences <- merge(enst_ensp_sequences, mane_select_essentials, all.x = TRUE, sort = FALSE)
+    enst_ensp_sequences$Mane <- ifelse(!is.na(enst_ensp_sequences$Mane), "Mane", "WithoutMane")
+  } else {
+    enst_ensp_sequences$Mane <- "WithoutMane"  # Default status if no MANE data is provided
   }
-  colnames(data_matrix) <- change_dot(colnames(data_matrix))
-  colnames(data_matrix) <- gsub("^X", "", colnames(data_matrix))
 
-  mane_select_essentials <- mane_select[, c(1, 2, 4)]
-  colnames(mane_select_essentials) <- c("ENSG", "ENST", "Mane")
+  # Merge peptide lengths data if available
+  if (!is.null(peptide_lengths)) {
+    colnames(peptide_lengths) <- c("ENSG", "ENST", "PeptideLength")
+    enst_ensp_sequences <- merge(enst_ensp_sequences, peptide_lengths, by = c("ENST","ENSG"), all.x = TRUE, sort = FALSE)
+  } else {
+    enst_ensp_sequences$PeptideLength <- 0  # Set default PeptideLength to zero if no data provided
+  }
 
-  enst_ensp_sequences_mane_select <- merge(enst_ensp_sequences, mane_select_essentials, all.x = TRUE, sort = FALSE)
 
-  enst_ensp_sequences_mane_select$Mane <- ifelse(enst_ensp_sequences_mane_select$Mane != "NA", "Mane", "WithoutMane")
+  cleaned_list <- enst_ensp_sequences %>%
+    dplyr::arrange(ENST, desc(Mane == "Mane"), desc(PeptideLength)) %>%
+    dplyr::distinct(ENSG, ENST_Seq, .keep_all = TRUE)
 
-  cleaned_list <- enst_ensp_sequences_mane_select %>%
-    dplyr::arrange(.data$ENST, desc(.data$Mane == "Mane")) %>%
-    dplyr::distinct(.data$ENSG, .data$ENST_Seq, .keep_all = TRUE)
 
   data_matrix_cleaned <- data_matrix[data_matrix$ENST %in% cleaned_list$ENST, ]
+
+  # Group and calculate redundancy counts
 
   counts_ensgs <- enst_ensp_sequences %>%
     dplyr::group_by(.data$ENSG, .data$ENST_Seq) %>%
@@ -40,11 +46,14 @@ remove_redundants <- function(data_matrix, enst_ensp_sequences, mane_select) {
 
   counts_ensgs_cleaned <- counts_ensgs[counts_ensgs$ENST %in% data_matrix_cleaned$ENST, ]
 
-  ordered_data_matrix <- merge(data_matrix_cleaned, counts_ensgs_cleaned[, c(3,4)]) %>% dplyr::distinct()
+  ordered_data_matrix <- merge(data_matrix_cleaned, counts_ensgs_cleaned[, c("n", "ENST")], by = "ENST") %>%
+    dplyr::distinct()
 
-  ordered_data_matrix_multipyled <- ordered_data_matrix[,3:(ncol(ordered_data_matrix)-1)]*ordered_data_matrix[,ncol(ordered_data_matrix)]
+  # Multiplying TPMs by the number of redundant transcripts
+  ordered_data_matrix_multipyled <- ordered_data_matrix[, 3:(ncol(ordered_data_matrix) - 1)] * ordered_data_matrix[, "n"]
 
   ordered_data_matrix_multipyled_with_names <- cbind(ordered_data_matrix[, 1:2], ordered_data_matrix_multipyled)
 
   return(ordered_data_matrix_multipyled_with_names)
 }
+
