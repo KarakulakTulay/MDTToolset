@@ -75,7 +75,7 @@ knitr::kable(head(cond2_ENST_ENSG,2), caption = 'TPM Matrix')
 As transcripts with the same sequences might have different peptide lengths, we aim to select the ones with the longest sequence when there is a redundancy. This information cannot be accessed directly via Ensembl Biomart, this we need to download the transcripts' peptide sequences and then calculate the length of the peptides. We provide Ensembl version 104 as an example. In case you want to prepare a different version, download ENSG, ENST, peptide sequences from Biomart and use the following function from MDTToolset:
 
 df_biomart_seq_length <- MDTToolset::MDTToolset::prepare_seq_length('mart_export.txt') 
-File format of mart_export.txt if fasta format:
+The file 'mart_export.txt' is in the fasta file format:
 >ENSG0000000XXXX|ENST0000000KKK
 MQRSPLEKASVVSKLFFSWTRPILRKGYRQRLELSDIYQIPSVDSADNLSEKLEREWDRE
 LASKKNPKLINALRRCFFWRFMFYGIFLYLGEVTKAVQPLLLGRIIASYDPDNKEERSIA
@@ -84,8 +84,7 @@ IYLG*
 MTAEEMKATESGAQSAPLPMEGVDISPKQDEGVLKVIKREGTGTEMPMIGDRVFVHYTGW
 LLDGTKFDSSLD
 
-
-```{r }
+```{r PeptideLength}
 # Example dataframe for df_biomart_seq_length 
 df_biomart_seq_length <- MDTToolset::df_biomart_seq_length
 
