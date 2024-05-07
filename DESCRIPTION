@@ -19,7 +19,8 @@ Imports:
     ggplot2,
     igraph,
     RColorBrewer,
-    Biostrings
+    Biostrings,
+    seqinr
 Depends: 
     R (>= 2.10)
 LazyData: true
