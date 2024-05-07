@@ -86,7 +86,7 @@ LLDGTKFDSSLD
 
 ```{r PeptideLength}
 # Example dataframe for df_biomart_seq_length 
-df_biomart_seq_length <- MDTToolset::df_biomart_seq_length
+df_biomart_seq_length <- MDTToolset::df_biomart_seq_selection
 
 knitr::kable(head(df_biomart_seq_length,2), caption = "Transcripts' Peptide Seq Length")
 ```
