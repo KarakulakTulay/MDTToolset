@@ -55,6 +55,7 @@ the function `prepare_Seq()` takes fasta and MANE file as input and gives a data
 ```{r loadENSG_ENST_data}
 # read MANE Select
 ensg_enst_ensp_mane_v104 <- MDTToolset::ensg_enst_ensp_mane_v104
+ensg_enst_ensp_mane_v104 <- ensg_enst_ensp_mane_v104 %>% dplyr::distinct() # While downloading data from Biomart, the values might not be unique - make sure the rows are unique
 # prepare sequences and Mane select transcripts dataframe
 ensg_enst_seq <- prepare_Seq(MDTToolset::Homo_sapiens.GRCh38.cdna.all, ensg_enst_ensp_mane_v104)
 
