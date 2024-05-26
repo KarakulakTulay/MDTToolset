@@ -41,11 +41,11 @@ buildIsoNet <- function(dMDT_network_info, ensembl_data, iso_network, kallisto_c
           # lost interaction -- this needs to be taken from BioMart!
           ENST_id_missed <- unique(ensembl_data[ensembl_data$Protein.stable.ID == each_protein, 'Transcript.stable.ID'])
 
-          ENST_id_expression_missed <- sample_kallisto[sample_kallisto$Transcript.stable.ID == ENST_id_missed, 3]
+          ENST_id_expression_missed <- sample_kallisto[sample_kallisto$ENST == ENST_id_missed, 3]
 
           if (length(ENST_id_expression_missed) > 0) {
 
-            if (as.numeric(ENST_id_expression_missed) >= 2.0) {
+            if (as.numeric(ENST_id_expression_missed) >= 2) {
 
               ensp_expressed_missed <- append(ensp_expressed_missed, each_protein)
 
@@ -71,11 +71,11 @@ buildIsoNet <- function(dMDT_network_info, ensembl_data, iso_network, kallisto_c
           # lost interaction
           ENST_id_kept <- unique(ensembl_data[ensembl_data$Protein.stable.ID == each_protein_kept, 'Transcript.stable.ID'])
 
-          ENST_id_expression_kept <- sample_kallisto[sample_kallisto$Transcript.stable.ID == ENST_id_kept, 3]
+          ENST_id_expression_kept <- sample_kallisto[sample_kallisto$ENST == ENST_id_kept, 3]
 
           if (length(ENST_id_expression_kept) > 0) {
 
-            if (as.numeric(ENST_id_expression_kept) >= 2.0) {
+            if (as.numeric(ENST_id_expression_kept) >= 2) {
 
               ensp_expressed_kept <- append(ensp_expressed_kept, each_protein_kept)
 
