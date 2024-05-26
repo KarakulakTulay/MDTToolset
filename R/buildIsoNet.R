@@ -7,6 +7,7 @@
 #'
 #' @return dataframe
 #' @importFrom dplyr group_by mutate select count n arrange filter distinct desc everything
+#' @importFrom tidyr separate_rows
 #' @export
 
 buildIsoNet <- function(dMDT_network_info, ensembl_data, iso_network, kallisto_counts) {
@@ -43,25 +44,21 @@ buildIsoNet <- function(dMDT_network_info, ensembl_data, iso_network, kallisto_c
 
           ENST_id_expression_missed <- sample_kallisto[sample_kallisto$ENST == ENST_id_missed, 3]
 
-          if (length(ENST_id_expression_missed) > 0) {
-
-            if (as.numeric(ENST_id_expression_missed) >= 2) {
+          if (length(ENST_id_expression_missed) > 0 && as.numeric(ENST_id_expression_missed) >= 2) {
 
               ensp_expressed_missed <- append(ensp_expressed_missed, each_protein)
 
+            } else {
+
+              ensp_expressed_missed <- append(ensp_expressed_missed, 'Not_expressed')
+
             }
 
-          } else {
+          } } else {
 
-            ensp_expressed_missed <- append(ensp_expressed_missed, 'Not_expressed')
-
-          }
+             ensp_expressed_missed <- append(ensp_expressed_missed, 'No missed int')
 
         }
-      } else {
-
-        ensp_expressed_missed <- append(ensp_expressed_missed, 'No missed int')
-      }
 
 
       if (length(kept_protein_ints) > 0) {
@@ -73,67 +70,71 @@ buildIsoNet <- function(dMDT_network_info, ensembl_data, iso_network, kallisto_c
 
           ENST_id_expression_kept <- sample_kallisto[sample_kallisto$ENST == ENST_id_kept, 3]
 
-          if (length(ENST_id_expression_kept) > 0) {
-
-            if (as.numeric(ENST_id_expression_kept) >= 2) {
+          if (length(ENST_id_expression_kept) > 0 && as.numeric(ENST_id_expression_kept) >= 2) {
 
               ensp_expressed_kept <- append(ensp_expressed_kept, each_protein_kept)
 
+            } else {
+
+              ensp_expressed_kept <- append(ensp_expressed_kept, 'Not_expressed')
+
             }
 
-          } else {
+          } } else {
 
-            ensp_expressed_kept <- append(ensp_expressed_kept, 'Not_expressed')
+             ensp_expressed_kept <- append(ensp_expressed_kept, 'No kept int')
 
-          }
-
-        } } else {
-
-          ensp_expressed_kept <- append(ensp_expressed_kept, 'No kept int')
-        }
+             }
 
       ## compare MDT and Canonical ENSP in STRING
-      MDT_in_sample <- each_dMDT_in_sample[, 'MDT_GTEx']
+      MDT_in_samples <- each_dMDT_in_sample %>% tidyr::separate_rows(MDT_GTEx, sep = ',')
+      MDT_in_sample <- unique(each_dMDT_in_sample[ ,'MDT_GTEx'])
 
       # version difference - sometimes MDTs might not be found in biomart_protein_seq_ess
 
-      MDT_ENSP <- unique(ensembl_data[ensembl_data$Transcript.stable.ID == MDT_in_sample, 'Protein.stable.ID'])
 
-      Canonical_STRING_ENSP <- each_dMDT_in_sample[, 'STRINGensp']
+        for (eachMDT in MDT_in_sample) {
 
-      if (length(MDT_ENSP) > 0) {
+        MDT_ENSP <- unique(ensembl_data[ensembl_data$Transcript.stable.ID == eachMDT, 'Protein.stable.ID'])
 
-        if (MDT_ENSP != Canonical_STRING_ENSP) {
+        Canonical_STRING_ENSP <- each_dMDT_in_sample[, 'STRINGensp']
 
-          MDT_int_losts <- iso_network[iso_network$ENST == MDT_in_sample, 'MissInts']
-          MDT_int_losts_ensps <- regmatches(miss_ints, gregexpr("ENSP\\d+", MDT_int_losts))[[1]]
+         if (length(MDT_ENSP) > 0) {
 
-          int_losts_in_sample <- ensp_expressed_missed[!ensp_expressed_missed %in% MDT_int_losts_ensps]
-          int_losts_in_mdt <- ensp_expressed_missed[ensp_expressed_missed %in% MDT_int_losts_ensps]
+          if (MDT_ENSP != Canonical_STRING_ENSP) {
 
-          each_dMDT_in_sample$ensp_expressed_missed <- unique(paste(ensp_expressed_missed, collapse = ','))
-          each_dMDT_in_sample$ensp_expressed_kept <- unique(paste(ensp_expressed_kept, collapse = ','))
-          each_dMDT_in_sample$ensp_expressed_missed_in_sample <- unique(paste(int_losts_in_sample, collapse = ','))
-          each_dMDT_in_sample$int_losts_in_mdt <- unique(paste(int_losts_in_mdt, collapse = ','))
+            MDT_int_losts <- iso_network[iso_network$ENST == eachMDT, 'MissInts']
+            MDT_int_losts_ensps <- regmatches(miss_ints, gregexpr("ENSP\\d+", MDT_int_losts))[[1]]
+
+            int_losts_in_sample <- ensp_expressed_missed[!ensp_expressed_missed %in% MDT_int_losts_ensps]
+            int_losts_in_mdt <- ensp_expressed_missed[ensp_expressed_missed %in% MDT_int_losts_ensps]
+
+            each_dMDT_in_sample$ensp_expressed_missed <- unique(paste(ensp_expressed_missed, collapse = ','))
+            each_dMDT_in_sample$ensp_expressed_kept <- unique(paste(ensp_expressed_kept, collapse = ','))
+            #each_dMDT_in_sample$ensp_expressed_missed_in_sample <- unique(paste(int_losts_in_sample, collapse = ','))
+            each_dMDT_in_sample$int_losts_in_mdt <- unique(paste(int_losts_in_mdt, collapse = ','))
+
+          } else if (MDT_ENSP == Canonical_STRING_ENSP) {
+
+            each_dMDT_in_sample$ensp_expressed_missed <- unique(paste(ensp_expressed_missed, collapse = ','))
+            each_dMDT_in_sample$ensp_expressed_kept <- unique(paste(ensp_expressed_kept, collapse = ','))
+            #each_dMDT_in_sample$ensp_expressed_missed_in_sample <- unique(paste(ensp_expressed_missed, collapse = ','))
+            each_dMDT_in_sample$int_losts_in_mdt <- 'Canonical'
+
+          }
 
         } else {
 
           each_dMDT_in_sample$ensp_expressed_missed <- unique(paste(ensp_expressed_missed, collapse = ','))
           each_dMDT_in_sample$ensp_expressed_kept <- unique(paste(ensp_expressed_kept, collapse = ','))
-          each_dMDT_in_sample$ensp_expressed_missed_in_sample <- unique(paste(ensp_expressed_missed, collapse = ','))
-          each_dMDT_in_sample$int_losts_in_mdt <- unique(paste('Canonical', collapse = ','))
+          #each_dMDT_in_sample$ensp_expressed_missed_in_sample <- unique(paste(ensp_expressed_missed, collapse = ','))
+          each_dMDT_in_sample$int_losts_in_mdt <- 'MDT_is_not_found'
 
-        }
+          }
 
-      } else {
+        dMDT_int_Loss_all <-  rbind(dMDT_int_Loss_all, each_dMDT_in_sample)
 
-        each_dMDT_in_sample$ensp_expressed_missed <- unique(paste(ensp_expressed_missed, collapse = ','))
-        each_dMDT_in_sample$ensp_expressed_kept <- unique(paste(ensp_expressed_kept, collapse = ','))
-        each_dMDT_in_sample$ensp_expressed_missed_in_sample <- unique(paste(ensp_expressed_missed, collapse = ','))
-        each_dMDT_in_sample$int_losts_in_mdt <- unique(paste('MDT_is_not_found', collapse = ','))
       }
-
-      dMDT_int_Loss_all <-  rbind(dMDT_int_Loss_all, each_dMDT_in_sample)
     }
   }
 
